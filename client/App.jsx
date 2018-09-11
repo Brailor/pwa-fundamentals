@@ -1,8 +1,5 @@
 import React, { Component } from 'react';
-import {
-  BrowserRouter as Router,
-  Route
-} from 'react-router-dom';
+import { BrowserRouter as Router, Route } from 'react-router-dom';
 
 import './sass/content-wrapper.scss';
 
@@ -27,17 +24,17 @@ import { onQrCodeScan } from './utils/qrcode';
 class App extends Component {
   constructor(props) {
     super(props);
-    
+
     this.cartStore = new CartStore();
     this.groceryItemStore = new GroceryItemStore();
     this.orderStore = new OrderStore();
 
-    this.cartStore.itemListeners.register((newItems) => {
-      this.setState({cartItems: newItems});
+    this.cartStore.itemListeners.register(newItems => {
+      this.setState({ cartItems: newItems });
     });
 
-    this.orderStore.orderListeners.register((newItems) => {
-      this.setState({orders: newItems});
+    this.orderStore.orderListeners.register(newItems => {
+      this.setState({ orders: newItems });
     });
 
     this.state = {
@@ -50,23 +47,11 @@ class App extends Component {
     this.closeAllDrawers = this.closeAllDrawers.bind(this);
     this.beginQrScan = this.beginQrScan.bind(this);
 
-    this.homeRoute = (props) => (
-      <Home
-        cartStore={this.cartStore}
-        groceryItemStore={this.groceryItemStore}
-        {...props} />
+    this.homeRoute = props => <Home cartStore={this.cartStore} groceryItemStore={this.groceryItemStore} {...props} />;
+    this.categoryRoute = props => (
+      <CategoryDetails cartStore={this.cartStore} groceryItemStore={this.groceryItemStore} {...props} />
     );
-    this.categoryRoute = (props) => (
-      <CategoryDetails
-        cartStore={this.cartStore}
-        groceryItemStore={this.groceryItemStore}
-        {...props} />
-    );
-    this.orderRoute = (props) => (
-      <OrderDetails
-        orderStore={this.orderStore}
-        {...props} />
-    );
+    this.orderRoute = props => <OrderDetails orderStore={this.orderStore} {...props} />;
   }
 
   toggleLeftDrawer() {
@@ -98,32 +83,32 @@ class App extends Component {
             <div className="brand mui--appbar-line-height">
               <span className="mui--text-title">📦 Orders</span>
             </div>
-            <div className="mui-divider"></div>
-            <Orders orders={this.state.orders}/>
+            <div className="mui-divider" />
+            <Orders orders={this.state.orders} />
           </SideDrawer>
           <SideDrawer side={'right'} drawerShowing={this.state.drawerShowing === 'right'}>
             <div className="brand mui--appbar-line-height">
               <span className="mui--text-title">🛒 Cart</span>
             </div>
-            <div className="mui-divider"></div>
+            <div className="mui-divider" />
             <Cart cartStore={this.cartStore} orderStore={this.orderStore} cartItems={this.state.cartItems} />
           </SideDrawer>
           <AppHeader
             numItemsInCart={this.state.cartItems.length}
             doQrScan={this.beginQrScan}
-            doLeftToggle={this.toggleLeftDrawer} doRightToggle={this.toggleRightDrawer}></AppHeader>
+            doLeftToggle={this.toggleLeftDrawer}
+            doRightToggle={this.toggleRightDrawer}
+          />
           <div className="content-wrapper">
-            <div className="mui--appbar-height"></div>
+            <div className="mui--appbar-height" />
             <Container fluid={true}>
-              <Route exact foo='bar' path="/" component={this.homeRoute} />
+              <Route exact foo="bar" path="/" component={this.homeRoute} />
               <Route exact path="/category/:id" component={this.categoryRoute} />
               <Route exact path="/order/:id" component={this.orderRoute} />
             </Container>
           </div>
-          <AppFooter></AppFooter>
-          {this.state.drawerShowing
-            ? <div id="mui-overlay" onClick={this.closeAllDrawers}></div>
-            : ''}
+          <AppFooter />
+          {this.state.drawerShowing ? <div id="mui-overlay" onClick={this.closeAllDrawers} /> : ''}
         </div>
       </Router>
     );

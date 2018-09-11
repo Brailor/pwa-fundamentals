@@ -4,24 +4,33 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CompressionPlugin = require('compression-webpack-plugin');
 const StyleExtHtmlWebpackPlugin = require('style-ext-html-webpack-plugin');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
+const path = require('path');
+
 var ManifestPlugin = require('webpack-manifest-plugin');
 var BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const extractSass = require('./extract-sass');
 const html = require('./html.config');
 
-
-module.exports = function (env, options) {
-  let plugins = [extractSass,
+module.exports = function(env, options) {
+  let plugins = [
+    extractSass,
     new HtmlWebpackPlugin(html),
     new ManifestPlugin({
-      fileName: 'asset-manifest.json',
+      fileName: 'asset-manifest.json'
     })
   ];
   if (process.env.ANALYZE) {
-    plugins.push(new BundleAnalyzerPlugin())
+    plugins.push(new BundleAnalyzerPlugin());
   }
   if (env === 'prod') {
+    plugins.push(
+      new CleanWebpackPlugin(['dist'], {
+        root: path.join(__dirname, '..'),
+        exclude: ['cert.pem', 'key.pem']
+      })
+    );
     plugins.push(
       new webpack.LoaderOptionsPlugin({
         minimize: true,
@@ -31,9 +40,7 @@ module.exports = function (env, options) {
     plugins.push(
       new webpack.optimize.UglifyJsPlugin({
         sourceMap:
-        options.devtool &&
-        (options.devtool.indexOf('sourcemap') >= 0 ||
-          options.devtool.indexOf('source-map') >= 0),
+          options.devtool && (options.devtool.indexOf('sourcemap') >= 0 || options.devtool.indexOf('source-map') >= 0),
         beautify: false,
         mangle: {
           screw_ie8: true,
@@ -62,8 +69,7 @@ module.exports = function (env, options) {
         }
       })
     );
-  }
-  else {
+  } else {
     plugins.push(new webpack.NamedModulesPlugin());
     plugins.push(new webpack.HotModuleReplacementPlugin());
   }
