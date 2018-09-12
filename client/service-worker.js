@@ -16,21 +16,51 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', fetchEvent => {
-  let acceptHeaders = fetchEvent.request.headers.get('accept');
-  let reqUrl = new URL(fetchEvent.request.url);
+  const acceptHeaders = fetchEvent.request.headers.get('accept');
+  const reqUrl = new URL(fetchEvent.request.url);
+  const isGroceryImage = acceptHeaders.indexOf('image/*') >= 0 && reqUrl.pathname.indexOf('/images/' === 0);
+  const isApiDataRequest = acceptHeaders.indexOf('*/*') >= 0 && fetchEvent.request.method === 'GET';
 
   fetchEvent.respondWith(
     caches.match(fetchEvent.request, { cacheName: ALL_CACHES.prefetch }).then(response => {
       if (response) return response;
+      console.log(acceptHeaders);
 
-      if (acceptHeaders.indexOf('image/*') >= 0 && reqUrl.pathname.indexOf('/images/' === 0)) {
+      if (isGroceryImage) {
         return serveImage(fetchEvent);
+      }
+
+      if (isApiDataRequest) {
+        return fetchApiDataWithFallback(fetchEvent);
       }
 
       return fetch(fetchEvent.request);
     })
   );
 });
+/**
+ * Network first, then cache, update the cache after each successful call
+ * @param {Event} fetchEvent
+ * @returns {Promise}
+ */
+function fetchApiDataWithFallback(fetchEvent) {
+  return fetch(fetchEvent.request)
+    .then(response => {
+      if (!response.ok) throw new Error();
+      const clonedResponse = response.clone();
+      //TODO: in case of successful fetch req. start saving the response to cache
+      //and return the value immediately
+      caches.open(ALL_CACHES.fallback).then(cache => {
+        cache.add(fetchEvent.request, clonedResponse);
+      });
+
+      return response;
+    })
+    .catch(() => {
+      //TODO: in case of network error, 404 or timeout serve the json from the cache
+      return caches.match(fetchEvent.request, { cacheName: ALL_CACHES.fallback });
+    });
+}
 
 function serveImage(fetchEvent) {
   return fetch(fetchEvent.request, { mode: 'cors', credentials: 'omit' })

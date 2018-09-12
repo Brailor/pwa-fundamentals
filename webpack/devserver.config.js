@@ -1,6 +1,6 @@
 /* eslint-env node */
 
-module.exports = function (/*env*/) {
+module.exports = function(/*env*/) {
   return {
     port: 3000,
     host: 'localhost',
@@ -12,4 +12,4 @@ module.exports = function (/*env*/) {
       colors: true
     }
   };
-}
+};
