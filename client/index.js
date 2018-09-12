@@ -24,7 +24,9 @@ import 'worker-loader?name=./service-worker.js!./service-worker.js';
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
     .register('./service-worker.js')
-    .then(registration => console.log('Starting to register Service worker', registration))
+    .then(registration => {
+      console.log('Starting to register Service worker', registration);
+    })
     .catch(err => console.error('Error during Service worker registration', err));
 }
 
