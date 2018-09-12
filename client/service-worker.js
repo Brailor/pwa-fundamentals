@@ -1,6 +1,8 @@
 import { removeUnusedCaches, precacheStaticAssets, ALL_CACHES_LIST, ALL_CACHES } from './sw/caches';
 
 const FALLBACK_IMAGE_URL = 'https://localhost:3100/images/fallback-grocery.png';
+const INDEX_HTML_PATH = '/';
+const INDEX_HTML_URL = new URL(INDEX_HTML_PATH, self.location).toString();
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -20,11 +22,21 @@ self.addEventListener('fetch', fetchEvent => {
   const reqUrl = new URL(fetchEvent.request.url);
   const isGroceryImage = acceptHeaders.indexOf('image/*') >= 0 && reqUrl.pathname.indexOf('/images/' === 0);
   const isApiDataRequest = acceptHeaders.indexOf('*/*') >= 0 && fetchEvent.request.method === 'GET';
+  const isHTMLRequest = fetchEvent.request.headers.get('accept').indexOf('text/html') !== -1;
+  const isLocal = new URL(fetchEvent.request.url).origin !== location.origin;
+
+  if (isHTMLRequest && isLocal) {
+    return event.respondWith(
+      fetch(fetchEvent.request).catch(() => {
+        return caches.match(INDEX_HTML_URL, { cacheName: ALL_CACHES.prefetch });
+      })
+    );
+  }
 
   fetchEvent.respondWith(
     caches.match(fetchEvent.request, { cacheName: ALL_CACHES.prefetch }).then(response => {
       if (response) return response;
-      console.log(acceptHeaders);
+      // console.log(acceptHeaders);
 
       if (isGroceryImage) {
         return serveImage(fetchEvent);
