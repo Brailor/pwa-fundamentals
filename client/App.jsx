@@ -25,7 +25,7 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.cartStore = new CartStore();
+    this.cartStore = CartStore();
     this.groceryItemStore = new GroceryItemStore();
     this.orderStore = new OrderStore();
 
@@ -39,7 +39,7 @@ class App extends Component {
 
     this.state = {
       drawerShowing: null,
-      cartItems: this.cartStore.items,
+      cartItems: this.cartStore.getItems(),
       orders: this.orderStore.orders
     };
     this.toggleLeftDrawer = this.toggleLeftDrawer.bind(this);
