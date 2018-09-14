@@ -24,6 +24,24 @@ function openDB() {
   });
 }
 
+function serveCategoryFallbackImage(request) {
+  return openDB()
+    .then(db => {
+      const path = new URL(request.url).pathname;
+      const groceryId = parseInt(path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.')), 10);
+
+      return db
+        .transaction('grocery-items')
+        .objectStore('grocery-items')
+        .get(groceryId);
+    })
+    .then(({ category }) => {
+      return caches.match(`https://localhost:3100/images/fallback-${category.toLowerCase()}.png`, {
+        cacheName: ALL_CACHES.fallbackImages
+      });
+    });
+}
+
 function downloadGroceryItems() {
   return openDB().then(db => {
     fetch('https://localhost:3100/api/grocery/items?limit=9999')
@@ -51,7 +69,7 @@ function downloadGroceryItems() {
 self.addEventListener('install', event => {
   event.waitUntil(
     Promise.all([
-      caches.open(ALL_CACHES.fallbackImages).then(cache => cache.add(FALLBACK_IMAGE_URL)),
+      caches.open(ALL_CACHES.fallbackImages).then(cache => cache.addAll(FALLBACK_IMAGE_URLS)),
       precacheStaticAssets(),
       downloadGroceryItems()
     ])
@@ -123,10 +141,10 @@ function serveImage(fetchEvent) {
   return fetch(fetchEvent.request, { mode: 'cors', credentials: 'omit' })
     .then(response => {
       if (!response.ok) {
-        return caches.match(FALLBACK_IMAGE_URL, { cacheName: ALL_CACHES.fallbackImages });
+        return serveCategoryFallbackImage(fetchEvent.request);
       } else {
         return response;
       }
     })
-    .catch(() => caches.match(FALLBACK_IMAGE_URL, { cacheName: ALL_CACHES.fallbackImages }));
+    .catch(() => serveCategoryFallbackImage(fetchEvent.request));
 }
