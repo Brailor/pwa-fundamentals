@@ -1,14 +1,59 @@
 import { removeUnusedCaches, precacheStaticAssets, ALL_CACHES_LIST, ALL_CACHES } from './sw/caches';
+import idb from 'idb';
 
 const FALLBACK_IMAGE_URL = 'https://localhost:3100/images/fallback-grocery.png';
+const FALLBACK_IMAGE_URLS = [
+  'https://localhost:3100/images/fallback-grocery.png',
+  'https://localhost:3100/images/fallback-vegetables.png',
+  'https://localhost:3100/images/fallback-bakery.png',
+  'https://localhost:3100/images/fallback-fruit.png',
+  'https://localhost:3100/images/fallback-herbs.png',
+  'https://localhost:3100/images/fallback-frozen.png',
+  'https://localhost:3100/images/fallback-dairy.png',
+  'https://localhost:3100/images/fallback-meat.png'
+];
 const INDEX_HTML_PATH = '/';
 const INDEX_HTML_URL = new URL(INDEX_HTML_PATH, self.location).toString();
+
+function openDB() {
+  return idb.open('grocery-items-store', 1, upgradeDb => {
+    switch (upgradeDb.oldVersion) {
+    case 0:
+      upgradeDb.createObjectStore('grocery-items', { keyPath: 'id' });
+    }
+  });
+}
+
+function downloadGroceryItems() {
+  return openDB().then(db => {
+    fetch('https://localhost:3100/api/grocery/items?limit=9999')
+      .then(response => response.json())
+      .then(({ data: groceryItems }) => {
+        //add data to indexedDB
+        const tx = db.transaction('grocery-items', 'readwrite');
+
+        tx.objectStore('grocery-items').clear();
+
+        tx.complete.then(() => {
+          const txx = db.transaction('grocery-items', 'readwrite');
+
+          groceryItems.forEach(groceryItem => {
+            txx.objectStore('grocery-items').put(groceryItem);
+          });
+
+          return txx.complete;
+        });
+      })
+      .catch(console.error);
+  });
+}
 
 self.addEventListener('install', event => {
   event.waitUntil(
     Promise.all([
       caches.open(ALL_CACHES.fallbackImages).then(cache => cache.add(FALLBACK_IMAGE_URL)),
-      precacheStaticAssets()
+      precacheStaticAssets(),
+      downloadGroceryItems()
     ])
   );
 });
