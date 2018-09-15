@@ -1,0 +1,8 @@
+web-push send-notification \
+    --endpoint=https://fcm.googleapis.com/fcm/send/egs2ocBBzpE:APA91bEU4QPDXfqUzskhC5fmgLJVn2ifId8EHg4-kPiliZi8LrynCsaErVdHZoZiyguE1R1duINyQdRacafq2jRE5lgDD46T5o5aiulVaXUbBR4X7Nxi4WegoTJeWby1YfQW3r0D2yNn \
+    --key=BLHFHJa8iRAOoCRSOCH4I1mMr3taFqQT-P1Z9nua1-dL43LEoSRuh1rnmkcYTeba8soXjGjcP5wxaueYTSA_ZfQ \
+    --auth=7VtSZFOFV7aWZ2d4Q93Gng\
+    --payload=TERMINATE \
+    --vapid-subject=mailto:viktor.ohad@gmail.com \
+    --vapid-pubkey=BI1nPQZshEGoTzjk8oI22gv2iNToYd3Mt7G0GtV-t84YrKmlwo5BG5n0U8KOiDV4dWconaBlN3pmzm0U2owSBes \
+    --vapid-pvtkey=tXDgGz78rPKPbRnC5pVq4m29U9Rx9mQ4lza3DQ03b-E

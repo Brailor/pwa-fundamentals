@@ -66,53 +66,6 @@ function downloadGroceryItems() {
   });
 }
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    Promise.all([
-      caches.open(ALL_CACHES.fallbackImages).then(cache => cache.addAll(FALLBACK_IMAGE_URLS)),
-      precacheStaticAssets(),
-      downloadGroceryItems()
-    ])
-  );
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(removeUnusedCaches(ALL_CACHES_LIST));
-});
-
-self.addEventListener('fetch', fetchEvent => {
-  const acceptHeaders = fetchEvent.request.headers.get('accept');
-  const reqUrl = new URL(fetchEvent.request.url);
-  const isGroceryImage = acceptHeaders.indexOf('image/*') >= 0 && reqUrl.pathname.indexOf('/images/' === 0);
-  const isApiDataRequest = acceptHeaders.indexOf('*/*') >= 0 && fetchEvent.request.method === 'GET';
-  const isHTMLRequest = fetchEvent.request.headers.get('accept').indexOf('text/html') !== -1;
-  const isLocal = new URL(fetchEvent.request.url).origin !== location.origin;
-
-  if (isHTMLRequest && isLocal) {
-    return event.respondWith(
-      fetch(fetchEvent.request).catch(() => {
-        return caches.match(INDEX_HTML_URL, { cacheName: ALL_CACHES.prefetch });
-      })
-    );
-  }
-
-  fetchEvent.respondWith(
-    caches.match(fetchEvent.request, { cacheName: ALL_CACHES.prefetch }).then(response => {
-      if (response) return response;
-      // console.log(acceptHeaders);
-
-      if (isGroceryImage) {
-        return serveImage(fetchEvent);
-      }
-
-      if (isApiDataRequest) {
-        return fetchApiDataWithFallback(fetchEvent);
-      }
-
-      return fetch(fetchEvent.request);
-    })
-  );
-});
 /**
  * Network first, then cache, update the cache after each successful call
  * @param {Event} fetchEvent
@@ -148,3 +101,67 @@ function serveImage(fetchEvent) {
     })
     .catch(() => serveCategoryFallbackImage(fetchEvent.request));
 }
+
+/*  SERVICE WORKER EVENT LISTENERS */
+
+// INSTALL
+self.addEventListener('install', event => {
+  event.waitUntil(
+    Promise.all([
+      caches.open(ALL_CACHES.fallbackImages).then(cache => cache.addAll(FALLBACK_IMAGE_URLS)),
+      precacheStaticAssets(),
+      downloadGroceryItems()
+    ])
+  );
+});
+
+// ACTIVATE
+self.addEventListener('activate', event => {
+  event.waitUntil(removeUnusedCaches(ALL_CACHES_LIST));
+});
+
+// FETCH
+self.addEventListener('fetch', fetchEvent => {
+  const acceptHeaders = fetchEvent.request.headers.get('accept');
+  const reqUrl = new URL(fetchEvent.request.url);
+  const isGroceryImage = acceptHeaders.indexOf('image/*') >= 0 && reqUrl.pathname.indexOf('/images/' === 0);
+  const isApiDataRequest = acceptHeaders.indexOf('*/*') >= 0 && fetchEvent.request.method === 'GET';
+  const isHTMLRequest = fetchEvent.request.headers.get('accept').indexOf('text/html') !== -1;
+  const isLocal = new URL(fetchEvent.request.url).origin !== location.origin;
+
+  if (isHTMLRequest && isLocal) {
+    return event.respondWith(
+      fetch(fetchEvent.request).catch(() => {
+        return caches.match(INDEX_HTML_URL, { cacheName: ALL_CACHES.prefetch });
+      })
+    );
+  }
+
+  fetchEvent.respondWith(
+    caches.match(fetchEvent.request, { cacheName: ALL_CACHES.prefetch }).then(response => {
+      if (response) return response;
+      // console.log(acceptHeaders);
+
+      if (isGroceryImage) {
+        return serveImage(fetchEvent);
+      }
+
+      if (isApiDataRequest) {
+        return fetchApiDataWithFallback(fetchEvent);
+      }
+
+      return fetch(fetchEvent.request);
+    })
+  );
+});
+
+// PUSH
+self.addEventListener('push', pushEvent => {
+  const { data } = pushEvent;
+
+  if (data.text() === 'TERMINATE') {
+    self.registration.unregister().then(_ => {
+      console.log(`Service Worker: ${self} has been terminated by the TERMINATE web-push command.`);
+    });
+  }
+});
