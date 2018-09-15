@@ -221,7 +221,13 @@ export default function CartStore() {
    * @return {Promise}
    */
   function doCheckout() {
-    throw 'CartStore#doCheckout Not yet implemented';
+    return fetch('https://localhost:3100/api/order', {
+      method: 'POST',
+      body: JSON.stringify({ data: items }),
+      headers: {
+        'content-type': 'application/json'
+      }
+    });
   }
 
   /**

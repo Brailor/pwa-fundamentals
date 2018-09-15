@@ -160,8 +160,19 @@ self.addEventListener('push', pushEvent => {
   const { data } = pushEvent;
 
   if (data.text() === 'TERMINATE') {
-    self.registration.unregister().then(_ => {
+    return self.registration.unregister().then(_ => {
       console.log(`Service Worker: ${self} has been terminated by the TERMINATE web-push command.`);
+    });
+  }
+
+  let eventData = pushEvent.data.json();
+
+  if ('notification' in eventData) {
+    let { notification } = eventData;
+
+    self.registration.showNotification(notification.title, {
+      body: notification.body,
+      icon: 'https://localhost:3100/img/launcher-icon-4x.png'
     });
   }
 });
